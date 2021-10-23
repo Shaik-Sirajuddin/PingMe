@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">PingMe</string>
+    <string name="title_activity_sign_up">SignUpActivity</string>
+    <string name="clientId">608722238051-q9vv99pcnhqe0c2h9o17a70obr3k6urv.apps.googleusercontent.com</string>
+    <string name="tap_to_chat">Tap to chat</string>
+    <string name="title_activity_chat">ChatActivity</string>
+    <string name="title_activity_main2">MainActivity2</string>
+</resources>

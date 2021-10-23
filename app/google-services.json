@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "608722238051",
+    "project_id": "pingme-1799e",
+    "storage_bucket": "pingme-1799e.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:608722238051:android:530ddffbf1b98b58f81656",
+        "android_client_info": {
+          "package_name": "com.sirajapps.pingme"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "608722238051-ajee6tgul3p9sss7b5pl14ep2jrnhqmo.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.sirajapps.pingme",
+            "certificate_hash": "5602632601dbb50eb89e456cd100e96682f87915"
+          }
+        },
+        {
+          "client_id": "608722238051-q9vv99pcnhqe0c2h9o17a70obr3k6urv.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDE-jRLQigNX24WZ0sv_i98E4DeidPtQo4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "608722238051-q9vv99pcnhqe0c2h9o17a70obr3k6urv.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

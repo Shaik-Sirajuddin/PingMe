@@ -1,16 +1,9 @@
 package com.sirajapps.pingme.activitiyuis
 
 import android.content.Context
-import android.graphics.Bitmap
-import android.graphics.BitmapFactory
-import android.graphics.drawable.Drawable
-import android.net.Uri
-import android.util.Log
+import android.view.LayoutInflater
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyListState
-import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -21,7 +14,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.*
 import androidx.compose.ui.graphics.*
-import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -30,30 +22,20 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.viewinterop.AndroidView
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.constraintlayout.compose.Dimension
-import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavHostController
+import androidx.recyclerview.widget.RecyclerView
 import coil.compose.rememberImagePainter
-import com.bumptech.glide.Glide
-import com.bumptech.glide.request.target.CustomTarget
-import com.bumptech.glide.request.transition.Transition
 import com.sirajapps.pingme.ChatActivity
 import com.sirajapps.pingme.R
-import com.sirajapps.pingme.models.Message
 import com.sirajapps.pingme.models.User
 import com.sirajapps.pingme.models.UserOffline
 import com.sirajapps.pingme.navigation.ChatScreenCallBacks
 import com.sirajapps.pingme.ui.theme.*
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import java.text.SimpleDateFormat
-import java.util.*
-import kotlin.collections.ArrayList
 
 val status = mutableStateOf("Online")
-val messages = mutableStateOf(ArrayList<Message>())
-val listState = LazyListState()
 var focus = false
 var hisUid: String = ""
 
@@ -62,8 +44,8 @@ fun ChatUi(
     context: Context,
     userOffline: UserOffline?,
     user: User,
-    navController: NavHostController,
     listener: ChatScreenCallBacks,
+    messageRecycle:(recycle:RecyclerView)->Unit
 ) {
     val img by remember {
         if (userOffline?.offlineImage != null)
@@ -105,17 +87,13 @@ fun ChatUi(
                 height = Dimension.fillToConstraints
                 width = Dimension.fillToConstraints
             }) {
-                ChatRecycle(uid = user.uid, context)
-                if (messages.value.size > 0) {
-                    //SideEffect {
-                    context as ChatActivity
-                    context.lifecycleScope.launch {
-                        if (messages.value.size > 0) {
-                           // listState.scrollToItem(messages.value.size - 1)
-                        }
-                    }
-                    //}
-                }
+               AndroidView(factory = { context ->
+                   val view = LayoutInflater.from(context).inflate(R.layout.users_recyclerview,null,false)
+                   val recycle = view.findViewById<RecyclerView>(R.id.usersRecyclerView)
+                   messageRecycle(recycle)
+                   return@AndroidView view
+               },
+               modifier = Modifier.fillMaxWidth())
             }
             Box(modifier = Modifier.constrainAs(msgBox) {
                 bottom.linkTo(parent.bottom)
@@ -130,203 +108,6 @@ fun ChatUi(
 
     }
 }
-
-@Composable
-fun ChatRecycle(uid: String, context: Context) {
-    LazyColumn(
-        state = listState,
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color.Transparent)
-    ) {
-        itemsIndexed(messages.value) { index, msg ->
-            if (msg.senderId == uid) {
-                val date = SimpleDateFormat("hh:mm a")
-                Box(modifier = Modifier.fillMaxWidth()) {
-                    ReceivedMessageBox(
-                        msg = msg.message,
-                        date = date.format(Date(msg.time)),
-                        image = msg.offlineImageUri ?: msg.onlineImageUri,
-                        //isOnline = msg.onlineImageUri==null
-                    )
-                }
-            } else {
-                val date = SimpleDateFormat("hh:mm a")
-                Box(
-                    modifier = Modifier.fillMaxWidth(),
-                    contentAlignment = Alignment.CenterEnd
-                ) {
-                    SentMessageBox(
-                        msg = msg.message,
-                        date = date.format(Date(msg.time)),
-                        image = msg.onlineImageUri,
-                        //isOnline = msg.offlineImageUri==null
-                    )
-                }
-            }
-        }
-    }
-
-}
-
-@Composable
-fun ReceivedMessageBox(
-    msg: String,
-    image: String? = null,
-    date: String,
-    isOnline:Boolean = true
-) {
-    Box(
-        modifier = Modifier
-            .background(Color.Transparent)
-            .fillMaxWidth(0.5f)
-            .padding(3.dp),
-        contentAlignment = Alignment.CenterStart
-    ) {
-        Box(
-            modifier = Modifier
-                .padding(5.dp)
-                .background(
-                    ChatColor,
-                    RoundedCornerShape(
-                        topStart = 0.dp,
-                        topEnd = 20.dp,
-                        bottomStart = 20.dp,
-                        bottomEnd = 20.dp
-                    )
-                )
-                .padding(horizontal = 10.dp, vertical = 5.dp)
-        ) {
-            Column(horizontalAlignment = Alignment.End,
-            verticalArrangement = Arrangement.SpaceEvenly) {
-                if (image != null) {
-                    val context = LocalContext.current
-                    var bitmapState by remember {
-                        mutableStateOf(BitmapFactory.decodeResource(context.resources,
-                            R.drawable.profile_image).asImageBitmap())
-                    }
-                    val scope = rememberCoroutineScope()
-                    SideEffect {
-                        scope.launch(Dispatchers.IO){
-                            Glide.with(context).asBitmap().load(image).into(
-                                object : CustomTarget<Bitmap>() {
-                                    override fun onResourceReady(
-                                        resource: Bitmap,
-                                        transition: Transition<in Bitmap>?,
-                                    ) {
-                                        bitmapState = resource.asImageBitmap()
-                                    }
-
-                                    override fun onLoadCleared(placeholder: Drawable?) {}
-                                }
-                            )
-                        }
-                    }
-                    Image(
-                        bitmap = bitmapState,
-                        contentDescription = "Image",
-                        modifier = Modifier
-                            .clip(
-                                RoundedCornerShape(10.dp)
-                            )
-                            .sizeIn(10.dp, 10.dp, 200.dp, 200.dp)
-                    )
-                }
-                Text(
-                    text = msg,
-                    color = DarkWhite,
-                    fontSize = 16.sp,
-                    modifier = Modifier.padding(end = 20.dp)
-                )
-                Text(
-                    text = date,
-                    color = SearchBarText,
-                    fontSize = 10.sp,
-                    modifier = Modifier.padding(start = 10.dp)
-                )
-            }
-        }
-    }
-}
-
-@Composable
-fun SentMessageBox(
-    msg: String,
-    image: String? = null,
-    isOnline: Boolean = true,
-    date: String,
-) {
-    Box(
-        modifier = Modifier
-            .background(Color.Transparent)
-            .fillMaxWidth(0.5f)
-            .padding(3.dp),
-        contentAlignment = Alignment.CenterEnd
-    ) {
-        Box(
-            modifier = Modifier
-                .padding(2.dp)
-                .background(
-                    GreenMessage,
-                    RoundedCornerShape(
-                        topStart = 20.dp,
-                        topEnd = 0.dp,
-                        bottomStart = 20.dp,
-                        bottomEnd = 20.dp
-                    )
-                )
-                .padding(horizontal = 10.dp, vertical = 5.dp)
-
-        ) {
-            Column(horizontalAlignment = Alignment.End,
-            verticalArrangement = Arrangement.SpaceEvenly) {
-                if (image != null) {
-                    val context = LocalContext.current as ChatActivity
-                    if(isOnline) {
-                        Image(
-                            painter = rememberImagePainter(image,
-                            builder={
-                                placeholder(R.drawable.profile_image)
-                            }),
-                        contentDescription = "image",
-                        modifier = Modifier
-                            .clip(
-                                RoundedCornerShape(10.dp)
-                            )
-                            .sizeIn(10.dp, 10.dp, 200.dp, 200.dp)
-                        )
-                    }else{
-
-                        val bitmap = context.getImageBitmap(context,Uri.parse(image))
-                        Image(
-                            bitmap =bitmap.asImageBitmap(),
-                            contentDescription = "Image",
-                            modifier = Modifier
-                                .clip(
-                                    RoundedCornerShape(10.dp)
-                                )
-                                .sizeIn(10.dp, 10.dp, 200.dp, 200.dp)
-                        )
-                    }
-                }
-                Text(
-                    text = msg,
-                    color = DarkWhite,
-                    fontSize = 16.sp,
-                    modifier = Modifier.padding(end = 20.dp)
-                )
-                Text(
-                    text = date,
-                    color = SearchBarText,
-                    fontSize = 10.sp
-                )
-            }
-
-        }
-    }
-}
-
-
 @Composable
 fun ToolBar(context: Context, image: String?, name: String) {
     context as ChatActivity
@@ -480,15 +261,4 @@ fun SendBox(listener: ChatScreenCallBacks) {
             colorFilter = ColorFilter.tint(DarkWhite)
         )
     }
-}
-
-fun updateMessages(list: ArrayList<Message>) {
-    messages.value = list
-}
-
-fun addMessage(msg: Message) {
-    val list = ArrayList<Message>()
-    list.addAll(messages.value)
-    list.add(msg)
-    messages.value = list
 }

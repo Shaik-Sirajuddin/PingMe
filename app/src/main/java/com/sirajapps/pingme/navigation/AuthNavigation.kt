@@ -1,10 +1,7 @@
 package com.sirajapps.pingme.navigation
 
 import android.content.Context
-import android.net.Uri
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.MutableState
-import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -56,9 +53,10 @@ fun chatNavigation(context: Context,user: User,userOffline: UserOffline?,listene
            ChatUi(context = context,
                userOffline = userOffline,
                user = user,
-               navController = navController,
                listener = listener
-           )
+           ){
+               listener.messageRecycle(it)
+           }
        }
     }
 }
@@ -68,4 +66,5 @@ interface ScreenCallbacks{
 }
 interface ChatScreenCallBacks{
     fun sendMessage(msg:String,imageUri: String? = null,id:DatabaseReference? = null)
+    fun messageRecycle(view:RecyclerView)
 }

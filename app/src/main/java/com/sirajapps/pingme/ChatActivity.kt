@@ -9,12 +9,15 @@ import android.media.SoundPool
 import android.net.Uri
 import android.os.Bundle
 import android.provider.MediaStore
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.database.DatabaseReference
@@ -23,6 +26,7 @@ import com.google.firebase.database.ktx.database
 import com.google.firebase.database.ktx.getValue
 import com.google.firebase.ktx.Firebase
 import com.sirajapps.pingme.activitiyuis.*
+import com.sirajapps.pingme.adapters.MessagesAdapter
 import com.sirajapps.pingme.models.*
 import com.sirajapps.pingme.navigation.ChatScreenCallBacks
 import com.sirajapps.pingme.navigation.chatNavigation
@@ -50,6 +54,10 @@ class ChatActivity : ComponentActivity(), ChatScreenCallBacks {
     private var sendSound: Int = 0
     private var receiveSound: Int = 0
     private lateinit var database: FirebaseDatabase
+    private lateinit var adapter:MessagesAdapter
+    private val list = ArrayList<Message>()
+    private lateinit var recyclerView: RecyclerView
+    private var isViewInitailized = false
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val intent = intent
@@ -57,9 +65,6 @@ class ChatActivity : ComponentActivity(), ChatScreenCallBacks {
         val userOfflineString = intent.getStringExtra("userOffline")!!
         chatPerson = Json.decodeFromString(userString)
         userOffline = Json.decodeFromString(userOfflineString)
-        if (hisUid != chatPerson.uid) {
-            messages.value = ArrayList()
-        }
         hisUid = chatPerson.uid
         setContent {
             PingMeTheme {
@@ -69,12 +74,14 @@ class ChatActivity : ComponentActivity(), ChatScreenCallBacks {
                     listener = this)
             }
         }
+        adapter = MessagesAdapter(this,list)
         viewModel = ViewModelProvider(this)[MyViewModel::class.java]
         repository = viewModel.getRepository()
         auth = Firebase.auth
         database = Firebase.database
         lifecycleScope.launch(Dispatchers.Default) {
             val chat = repository.getChatOfUser(chatPerson.uid)[0]
+            while(!isViewInitailized){}
             withContext(Dispatchers.Main) {
                 updateMessages(chat.chat.messages)
             }
@@ -118,6 +125,15 @@ class ChatActivity : ComponentActivity(), ChatScreenCallBacks {
 
     }
 
+    private fun updateMessages(messages: ArrayList<Message>) {
+        list.addAll(messages)
+        if(list.size==0)return
+        adapter.notifyItemRangeChanged(0,list.size)
+        recyclerView.post {
+            recyclerView.scrollToPosition(list.size-1)
+        }
+    }
+
     override fun sendMessage(msg: String, imageUri: String?,id:DatabaseReference?) {
         val msgId = id ?:database.reference
             .child("Chats")
@@ -146,7 +162,17 @@ class ChatActivity : ComponentActivity(), ChatScreenCallBacks {
             soundPool.play(sendSound, 0.5f, 0.5f, 0, 0, 1f)
         }
     }
-
+    private fun addMessage(message: Message){
+        list.add(message)
+        adapter.notifyItemInserted(list.size-1)
+        recyclerView.smoothScrollToPosition(list.size-1)
+    }
+    override fun messageRecycle(view: RecyclerView) {
+        recyclerView = view
+        view.layoutManager = LinearLayoutManager(this)
+        view.adapter = adapter
+        isViewInitailized = true
+    }
     override fun onDestroy() {
         super.onDestroy()
         focus = false
@@ -199,8 +225,10 @@ class ChatActivity : ComponentActivity(), ChatScreenCallBacks {
     }
 
     private fun updateMessageOffline(message:Message){
-        addMessage(message)
         viewModel.addMessageToDatabase(chatPerson.uid, message)
+        list.add(message)
+        adapter.notifyItemInserted(list.size-1)
+        recyclerView.smoothScrollToPosition(list.size-1)
         soundPool.play(sendSound, 0.5f, 0.5f, 0, 0, 1f)
     }
     private fun handleImageSelected(imageUri:Uri){

@@ -3,8 +3,8 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_margin="1dp"
-    >
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_margin="1dp">
 
     <ImageView
         android:background="@drawable/receive_message"
@@ -28,7 +28,7 @@
         android:paddingEnd="60dp"
         android:textSize="18sp"
         android:paddingBottom="5dp"
-        android:text="TextView"
+        tools:text="TextView"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/Image" />
     <TextView
@@ -40,8 +40,7 @@
         android:textColor="@color/lightText"
         app:layout_constraintEnd_toEndOf="@id/receive_msg"
         app:layout_constraintBottom_toBottomOf="@id/receive_msg"
-        android:text="12:59 am"
-        android:textStyle="italic"
+        tools:text="12:59 am"
         android:textAlignment="center"
         android:textSize="12sp"
         />
